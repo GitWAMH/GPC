@@ -28,7 +28,7 @@ void ofApp::setup(){
 
 	crazyTime = false;
 	colorText = ofColor::white;
-	probShoot = 10;
+	probShoot = 3;
 	crazyRotation = false;
 }
 
@@ -42,21 +42,27 @@ void ofApp::update(){
 
 		case Estado::Jugando:
 			if (!timer.timeIsUp()) {
+				if (!juegoInicia.getIsPlaying() && !fondoJuego.getIsPlaying()) {
+					fondoJuego.setLoop(true);
+					fondoJuego.play();
+				}
 
-				if (!crazyTime && timer.crazyTime()) {
+				if (!crazyTime && timer.crazyTime()) { // Activar hora loca
 					tank->setRotation(300);
 					colorText = ofColor::red;
 					crazyTime = true;
 					crazyRotation = true;
 					probShoot = 10;
+					powerUp.play();
 				}
-				else if (crazyTime && !timer.crazyTime()) {
+				else if (crazyTime && !timer.crazyTime()) { // Desactivar hora loca
 					tank->setRotation(100);
 					tank->setDirection(1); // Rotará en sentido horario
 					colorText = ofColor::white;
 					crazyTime = false;
 					crazyRotation = false;
-					probShoot = 5;
+					probShoot = 3;
+					powerUp.play();
 				}
 
 				bulletsVector.erase(std::remove_if(
@@ -83,10 +89,22 @@ void ofApp::update(){
 
 					if (bulletRect.intersects(player1Rect) || bulletRect.inside(player1Rect)) {
 						player1->addScore(bullet->getPoints());
+						if (bullet->getPoints() > 0) {
+							puntoGana.play();
+						}
+						else {
+							puntoPierde.play();
+						}
 						bullet->die();
 					}
 					else if (bulletRect.intersects(player2Rect) || bulletRect.inside(player2Rect)) {
 						player2->addScore(bullet->getPoints());
+						if(bullet->getPoints() > 0) {
+							puntoGana.play();
+						}
+						else {
+							puntoPierde.play();
+						}
 						bullet->die();
 					}
 
@@ -130,6 +148,10 @@ void ofApp::update(){
 			}
 			else {
 				estadoActual = ofApp::Estado::Final;
+				juegoInicia.stop();
+				fondoJuego.stop();
+				finJuego.setLoop(true);
+				finJuego.play();
 			}
 			break;
 
@@ -219,7 +241,6 @@ void ofApp::keyPressed(int key){
 			case 'p': case 'P':
 				juegoEspera.stop();
 				juegoInicia.play();
-				fondoJuego.play();
 				timer.initTimer();
 				estadoActual = ofApp::Estado::Jugando;
 				break;
@@ -277,10 +298,10 @@ void ofApp::keyPressed(int key){
 		{
 			case 'p': case 'P':
 				resetGame();
+				finJuego.stop();
 				juegoInicia.play();
-				fondoJuego.play();
-				estadoActual = ofApp::Estado::Jugando;
 				timer.initTimer();
+				estadoActual = ofApp::Estado::Jugando;
 				break;
 			case 'o': case 'O':
 				ofExit();
